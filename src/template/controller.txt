@@ -1,0 +1,16 @@
+import Koa from "koa";
+import { Router, successRsp, AuthRouter } from "koa-ts-core";
+
+class {{Controller}} {
+  @Router("get")
+  async get_test(ctx: Koa.Context) {
+    successRsp();
+  }
+
+  @AuthRouter("post")
+  async post_test(ctx: Koa.Context) {
+    successRsp();
+  }
+}
+
+export default {{Controller}};

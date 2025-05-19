@@ -1,0 +1,33 @@
+{
+  "name": "koa-typescript-cli",
+  "version": "0.0.2",
+  "bin": {
+    "koa-ts-cli": "./bin/cli.js"
+  },
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development"
+  },
+  "dependencies": {
+    "@babel/generator": "^7.27.0",
+    "@babel/parser": "^7.27.0",
+    "@babel/template": "^7.27.0",
+    "@babel/traverse": "^7.27.0",
+    "@babel/types": "^7.27.0",
+    "chalk": "^4.1.2",
+    "chokidar": "^4.0.3",
+    "commander": "^9.4.1",
+    "cross-env": "^7.0.3",
+    "glob": "^11.0.1",
+    "inquirer": "^8.2.5",
+    "nodemon": "^3.1.9",
+    "ora": "^6.1.2",
+    "prettier": "^3.5.3",
+    "simple-git": "^3.27.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

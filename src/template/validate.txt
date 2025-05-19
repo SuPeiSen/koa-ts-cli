@@ -1,0 +1,12 @@
+import Koa from 'koa';
+import BaseValidate from '@/validate/base';
+
+class {{Validate}} extends BaseValidate{
+  static checkId(ctx: Koa.Context) {
+    if (!ctx.query.id) {
+      throw new Error('id is required');
+    }
+  }
+}
+
+export default {{Validate}};
