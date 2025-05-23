@@ -9,13 +9,17 @@ import _template from "@babel/template";
 import prettier from "prettier";
 import { createRequire } from "node:module";
 import t from "@babel/types";
+import { execSync } from "child_process";
 
+// @ts-ignore
 const traverse = _traverse.default;
+// @ts-ignore
 const template = _template.default;
+// @ts-ignore
 const generator = _generator.default;
 
 /**
- * @typedef {Map<string, { functionName: string, method: string, path: string }>} RouteConfig
+ * @typedef {Map<string, { functionName: string, method: string, path: string, authRequired: boolean, apiPrePath: string }>} RouteConfig
  * @typedef {{ className: string, routeConfig: RouteConfig, functionNames: string[] }} ClassMetadata
  * @typedef {{ className: string, classObject: object, functionNames: string[] }} DocumentationMetadata
  */
@@ -29,6 +33,8 @@ const CONFIG = {
       method: %%METHOD%%,
       description: '',
       path: %%PATH%%,
+      authRequired: %%AUTH_REQUIRED%%,
+      apiPrePath: %%API_PRE_PATH%%,
       request: {
         header: { 
           'Content-Type': 'application/json', 
@@ -49,20 +55,28 @@ const CONFIG = {
  * @returns {Promise<void>}
  */
 export async function generateDocumentation() {
-  await import("ts-node/register");
-  try {
-    const controllerFiles = await glob(`${CONFIG.CONTROLLER_DIR}/**/*.ts`, {
-      nodir: true,
-      ignore: "**/*.d.ts",
+  await import("ts-node").then(async (tsNode) => {
+    tsNode.register({
+      transpileOnly: true,
     });
+    await import("tsconfig-paths/register.js");
+    try {
+      const controllerFiles = await glob(`${CONFIG.CONTROLLER_DIR}/**/*.ts`, {
+        nodir: true,
+        ignore: "**/*.d.ts",
+      });
 
-    for (const controllerFile of controllerFiles) {
-      await processControllerFile(controllerFile);
+      for (const controllerFile of controllerFiles) {
+        await processControllerFile(controllerFile);
+      }
+
+      // 格式化文档
+      execSync(`npx prettier --write ${CONFIG.DOCUMENTATION_DIR}/**/*.ts`);
+    } catch (error) {
+      console.error("文档生成失败:", error);
+      process.exit(1);
     }
-  } catch (error) {
-    console.error("文档生成失败:", error);
-    process.exit(1);
-  }
+  });
 }
 
 /**
@@ -75,17 +89,19 @@ async function processControllerFile(controllerPath) {
   const docPath = path.join(CONFIG.DOCUMENTATION_DIR, relativePath);
 
   const controllerMeta = await extractControllerMetadata(controllerPath);
-  await ensureDocumentationFile(docPath, controllerMeta);
+  if (controllerMeta) {
+    await ensureDocumentationFile(docPath, controllerMeta);
 
-  const docMeta = await extractDocumentationMetadata(docPath);
+    const docMeta = await extractDocumentationMetadata(docPath);
 
-  const { functionsToAdd, functionsToRemove } = compareMethods(
-    controllerMeta.functionNames,
-    docMeta.functionNames
-  );
+    const { functionsToAdd, functionsToRemove } = compareMethods(
+      controllerMeta.functionNames,
+      docMeta.functionNames
+    );
 
-  if (functionsToAdd.length > 0 || functionsToRemove.length > 0) {
-    await updateDocumentationFile(docPath, functionsToAdd, functionsToRemove);
+    if (functionsToAdd.length > 0 || functionsToRemove.length > 0) {
+      await updateDocumentationFile(docPath, functionsToAdd, functionsToRemove);
+    }
   }
 }
 
@@ -189,6 +205,8 @@ function createMethodNode(methodName) {
   const methodBody = CONFIG.DEFAULT_TEMPLATE({
     PATH: { type: "StringLiteral", value: `/${methodName}` },
     METHOD: { type: "StringLiteral", value: "get" },
+    AUTH_REQUIRED: { type: "BooleanLiteral", value: false },
+    API_PRE_PATH: { type: "StringLiteral", value: "" },
   });
 
   // 创建方法节点
@@ -216,7 +234,7 @@ async function formatCode(code) {
 /**
  * 从控制器文件提取元数据
  * @param {string} filePath - 控制器文件路径
- * @returns {Promise<ClassMetadata>} 类元数据
+ * @returns {Promise<ClassMetadata | undefined>} 类元数据
  */
 async function extractControllerMetadata(filePath) {
   const require = createRequire(import.meta.url);
@@ -227,7 +245,10 @@ async function extractControllerMetadata(filePath) {
     throw new Error(`No class found in ${filePath}`);
   }
 
-  console.log(mainClass.routesMap);
+  if (!mainClass.routesMap) {
+    return;
+  }
+
   return {
     className: mainClass.name,
     routeConfig: mainClass.routesMap,
@@ -257,13 +278,19 @@ function createClassWithMethods(controllerMeta) {
 
   // 创建类方法节点
   const methods = functionNames.map((methodName) => {
-    const method = routeConfig.get(methodName)?.method ?? "get";
-    const path = routeConfig.get(methodName)?.path ?? `/${methodName}`;
+    const {
+      method = "get",
+      path = `/${methodName}`,
+      authRequired = false,
+      apiPrePath = "",
+    } = routeConfig.get(methodName) ?? {};
 
     // 生成方法体AST
     const methodBody = CONFIG.DEFAULT_TEMPLATE({
       PATH: t.stringLiteral(path), // 动态注入路径
       METHOD: { type: "StringLiteral", value: method },
+      AUTH_REQUIRED: { type: "BooleanLiteral", value: authRequired },
+      API_PRE_PATH: { type: "StringLiteral", value: apiPrePath },
     });
 
     return t.classMethod(
@@ -318,13 +345,4 @@ async function extractDocumentationMetadata(filePath) {
   };
 }
 
-/**
- * 通过函数名获取返回值
- * @param {object} classObject - 类对象
- * @param {string} functionName - 函数名
- * @returns {object} 返回值
- */
-function getReturnValueByFunctionName(classObject, functionName) {
-  return classObject[functionName]();
-}
 export default generateDocumentation;
