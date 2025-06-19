@@ -285,9 +285,11 @@ function createClassWithMethods(controllerMeta) {
       apiPrePath = "",
     } = routeConfig.get(methodName) ?? {};
 
+    const apiPath = `/${className.toLowerCase()}${path}`;
+
     // 生成方法体AST
     const methodBody = CONFIG.DEFAULT_TEMPLATE({
-      PATH: t.stringLiteral(path), // 动态注入路径
+      PATH: t.stringLiteral(apiPath), // 动态注入路径
       METHOD: { type: "StringLiteral", value: method },
       AUTH_REQUIRED: { type: "BooleanLiteral", value: authRequired },
       API_PRE_PATH: { type: "StringLiteral", value: apiPrePath },
