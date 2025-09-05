@@ -63,7 +63,6 @@ async function createProject(projectName, options) {
       ...options,
     };
     await downloadTemplate(projectName, mergeOptions);
-    console.log(mergeOptions);
     spinner.succeed("Project created successfully!");
   } catch (error) {
     spinner.fail("Creation failed: " + error.message);

@@ -57,16 +57,38 @@ function removeGitFolder(projectPath) {
 // 模板git初始化
 function initializeGit(projectPath) {
   console.log(chalk.blue("Initializing new git repository..."));
-  execSync("git init", { cwd: projectPath, stdio: "inherit" });
+  execSync("git init --initial-branch=main", { cwd: projectPath, stdio: "inherit" });
 }
 
-// 执行依赖安装
+
+/**
+ * 安装依赖
+ * @param {string} projectPath 项目路径
+ * @param {string} npmType 包管理工具(npm|pnpm|yarn)
+ * @param {string} registry 包镜像地址
+ */
 function installDependencies(projectPath, npmType, registry) {
-  console.log(chalk.blue("Installing dependencies using pnpm..."));
-  execSync(`${npmType} install --registry ${registry}`, {
-    cwd: projectPath,
-    stdio: "inherit",
-  });
+  console.log(
+    chalk.blue(`\n📦 Installing dependencies using ${npmType}...\n`)
+  );
+
+  try {
+    // 执行安装命令
+    execSync(`${npmType} install --registry ${registry}`, {
+      cwd: projectPath,
+      stdio: "inherit",
+    });
+
+    console.log(chalk.green("\n✅ Dependencies installed successfully!\n"));
+  } catch (err) {
+    console.error(
+      chalk.red(`\n❌ Failed to install dependencies using ${npmType}.\n`)
+    );
+    console.error(chalk.yellow("💡 You can try manually running:"));
+    console.error(
+      chalk.cyan(`   cd ${projectPath} && ${npmType} install --registry ${registry}\n`)
+    );
+  }
 }
 
 export default downloadTemplate;
