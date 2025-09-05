@@ -39,7 +39,21 @@ async function createProject(projectName, options) {
       ],
       when: !options.registry,
     },
+    // 添加多一个bool类型选项
+    {
+      type: "confirm",
+      name: "x_get",
+      // 是否使用Xget
+      message: "use Xget, https://github.com/xixu-me/Xget",
+      default: false,
+      when: !options.x_get,
+    },
   ]);
+
+
+  if (answers.npm_type === "pnpm") {
+    console.log("\n⚠️  提示: pnpm 建议在 Node.js 18 及以上版本使用，以获得更好的性能与兼容性。\n");
+  }
 
   const spinner = ora("Downloading template...").start();
 
@@ -49,6 +63,7 @@ async function createProject(projectName, options) {
       ...options,
     };
     await downloadTemplate(projectName, mergeOptions);
+    console.log(mergeOptions);
     spinner.succeed("Project created successfully!");
   } catch (error) {
     spinner.fail("Creation failed: " + error.message);

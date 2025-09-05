@@ -7,6 +7,7 @@ import simpleGit from "simple-git";
 const git = simpleGit();
 
 const TEMPLATE_REPO = "https://github.com/SuPeiSen/koa-ts-template.git";
+const X_GWT_TEMPLATE_REPO = "https://xget.xi-xu.me/gh/SuPeiSen/koa-ts-template.git";
 
 /**
  * 下载模板
@@ -19,9 +20,12 @@ const downloadTemplate = async (projectName, options) => {
 
   const npmType = options.npm_type;
   const registry = options.registry;
+  const xGet = options.x_get;
+
+  const path = xGet ? X_GWT_TEMPLATE_REPO : TEMPLATE_REPO;
 
   try {
-    const projectPath = await cloneRepo(TEMPLATE_REPO, projectName);
+    const projectPath = await cloneRepo(path, projectName);
     removeGitFolder(projectPath);
     initializeGit(projectPath);
     installDependencies(projectPath, npmType, registry);

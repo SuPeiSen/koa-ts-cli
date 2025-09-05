@@ -1,11 +1,12 @@
 {
   "name": "koa-typescript-cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "bin": {
     "koa-ts-cli": "./bin/cli.js"
   },
-  "scripts": {
-    "dev": "cross-env NODE_ENV=development"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SuPeiSen/koa-ts-cli"
   },
   "dependencies": {
     "@babel/generator": "^7.27.0",
@@ -28,7 +29,13 @@
     "typescript": "^5.8.2"
   },
   "type": "module",
-  "author": "",
+  "author": "supeisen",
+  "email": "570779284@qq.com",
   "license": "ISC",
-  "description": ""
+  "description": "create koa typescript project",
+  "keywords": [
+    "koa",
+    "typescript",
+    "cli"
+  ]
 }
