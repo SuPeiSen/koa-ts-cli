@@ -16,14 +16,18 @@ const startProcess = () => {
   const tsConfig = path.join(projectPath, "tsconfig.json");
 
   // 使用 npx 执行 ts-node 来运行 TypeScript 文件
-  childProcess = spawn("npx", ["ts-node", mainFile, "-P", tsConfig], {
-    stdio: "inherit", // 继承父进程的标准输入输出
-    env: {
-      ...process.env, // 继承父进程的环境变量
-      NODE_ENV: "development", // 设置环境变量为开发环境
-      FORCE_COLOR: "3", // 强制颜色输出
-    },
-  });
+  childProcess = spawn(
+    "npx",
+    ["ts-node", "-r", "tsconfig-paths/register", mainFile, "-P", tsConfig],
+    {
+      stdio: "inherit", // 继承父进程的标准输入输出
+      env: {
+        ...process.env, // 继承父进程的环境变量
+        NODE_ENV: "development", // 设置环境变量为开发环境
+        FORCE_COLOR: "3", // 强制颜色输出
+      },
+    }
+  );
 
   // 错误处理
   childProcess.on("error", (error) => {
