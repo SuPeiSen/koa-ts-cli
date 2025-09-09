@@ -1,6 +1,6 @@
 {
   "name": "koa-typescript-cli",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "bin": {
     "koa-ts-cli": "./bin/cli.js"
   },
@@ -25,6 +25,7 @@
     "prettier": "^3.5.3",
     "simple-git": "^3.27.0",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.2"
   },

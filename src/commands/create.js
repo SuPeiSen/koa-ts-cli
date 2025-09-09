@@ -2,6 +2,11 @@
 import ora from "ora";
 import inquirer from "inquirer";
 import downloadTemplate from "../utils/downloader.js";
+import { appendFileSync } from "fs";
+import path from "path";
+import { execSync } from "child_process";
+
+const IGNORE_FILES = ["env", ".vscode"];
 
 /**
  * 创建项目
@@ -64,6 +69,21 @@ async function createProject(projectName, options) {
     };
     await downloadTemplate(projectName, mergeOptions);
     spinner.succeed("Project created successfully!");
+
+    const projectPath = path.join(process.cwd(), projectName);
+    const gitignorePath = path.join(projectPath, ".gitignore");
+    // 修改项目根目录下的.gitignore 增加忽略env文件和.vscode目录
+    appendFileSync(
+      gitignorePath,
+      IGNORE_FILES.map((file) => `\n${file}`).join("")
+    );
+
+    // 使用指令 进入项目目录 执行 git rm -r --cached
+    execSync("git status", {
+      cwd: projectPath,
+    });
+
+    console.log(`\ncd ${projectName}`);
   } catch (error) {
     spinner.fail("Creation failed: " + error.message);
     process.exit(1);
