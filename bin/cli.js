@@ -53,6 +53,7 @@ program
   .option("-n, --npm_type <npm_type>", "Specify npm type")
   .option("-r, --registry <registry>", "Specify registry type")
   .option("-t, --template <template>", "Specify project template")
+  .option("-d, --docker", "Add docker file")
   .action((name, options) => {
     createProject(name, options);
   });

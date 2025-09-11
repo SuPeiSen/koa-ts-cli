@@ -2,7 +2,7 @@
 import ora from "ora";
 import inquirer from "inquirer";
 import downloadTemplate from "../utils/downloader.js";
-import { appendFileSync } from "fs";
+import { appendFileSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { execSync } from "child_process";
 
@@ -44,7 +44,6 @@ async function createProject(projectName, options) {
       ],
       when: !options.registry,
     },
-    // 添加多一个bool类型选项
     {
       type: "confirm",
       name: "x_get",
@@ -52,6 +51,14 @@ async function createProject(projectName, options) {
       message: "use Xget, https://github.com/xixu-me/Xget",
       default: false,
       when: !options.x_get,
+    },
+    {
+      type: "confirm",
+      name: "docker",
+      // 是否添加docker初始化配置
+      message: "add docker initial configuration",
+      default: false,
+      when: !options.docker,
     },
   ]);
 
@@ -78,10 +85,29 @@ async function createProject(projectName, options) {
       IGNORE_FILES.map((file) => `\n${file}`).join("")
     );
 
-    // 使用指令 进入项目目录 执行 git rm -r --cached
+    // 使用指令 进入项目目录 执行 git status
     execSync("git status", {
       cwd: projectPath,
     });
+
+    if (options.docker) {
+      // 删除Dockerfile，docker-compose.yml，.dockerignore src/ecosystem.config.ts
+      execSync("rm -rf Dockerfile docker-compose.yml .dockerignore src/ecosystem.config.ts", {
+        cwd: projectPath,
+      });
+    } else {
+      // 修改Dockerfile里面的容器名
+      const dockerComposePath = path.join(projectPath, "docker-compose.yml");
+      const dockerfileContent = readFileSync(dockerComposePath, "utf-8");
+      writeFileSync(
+        dockerComposePath,
+        dockerfileContent.replace(
+          /{{template_container_name}}/g,
+          projectName
+        ),
+        "utf-8"
+      );
+    }
 
     console.log(`\ncd ${projectName}`);
   } catch (error) {
