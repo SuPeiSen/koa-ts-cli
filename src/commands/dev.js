@@ -16,9 +16,13 @@ const startProcess = () => {
   const tsConfig = path.join(projectPath, "tsconfig.json");
 
   // 使用 npx 执行 ts-node 来运行 TypeScript 文件
+
+  // tsc 总是 会根据 tsconfig 加载 include 中的所有文件（含 .d.ts）
+  // 但 ts-node 默认懒加载，只编译入口及其 import 的文件，不会自动读 include
+  // .d.ts 通常没有被任何文件 import，所以必须让 ts-node 主动加载，这就是 --files 选项的意义
   childProcess = spawn(
     "npx",
-    ["ts-node", "-r", "tsconfig-paths/register", mainFile, "-P", tsConfig],
+    ["ts-node", "--files", "-r", "tsconfig-paths/register", mainFile, "-P", tsConfig],
     {
       stdio: "inherit", // 继承父进程的标准输入输出
       env: {
