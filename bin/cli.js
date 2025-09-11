@@ -35,8 +35,9 @@ program
 program
   .command("build")
   .description("Build project")
-  .action(() => {
-    build();
+  .option("-c, --copy_env", "Copy .env to build")
+  .action((options) => {
+    build(options);
   });
 
 program

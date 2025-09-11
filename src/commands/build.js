@@ -3,7 +3,11 @@ import path from "path";
 
 const projectPath = process.cwd();
 
-function build() {
+/**
+ * 构建项目
+ * @param {{copy_env: boolean}} options 
+ */
+function build(options) {
   console.log("clean build");
   const buildDir = path.join(projectPath, "build");
   // 使用 spawn 删除构建目录
@@ -15,7 +19,7 @@ function build() {
   const tsConfig = path.join(projectPath, "tsconfig.json");
 
   // 使用 spawn 运行 TypeScript 编译器
-  const tscProcess = spawn("tsc", ["-p", tsConfig], {
+  const tscProcess = spawn("npx", ["tsc", "-p", tsConfig], {
     stdio: "inherit",
   });
 
@@ -34,11 +38,20 @@ function build() {
         return;
       }
 
-      // 复制projectPath/env 到build目录
-      const envDir = path.join(projectPath, "env");
-      spawn("cp", ["-r", envDir, path.join(projectPath, "build")], {
-        stdio: "inherit",
-      });
+      if (options.copy_env) {
+        // 复制projectPath/env 到build目录
+        const envDir = path.join(projectPath, "env");
+        spawn("cp", ["-r", envDir, path.join(projectPath, "build")], {
+          stdio: "inherit",
+        });
+      } else {
+        // 在build目录创建env空文件夹
+        spawn("mkdir", ["-p", path.join(projectPath, "build", "env")], {
+          stdio: "inherit",
+        });
+      }
+
+
 
       console.log("构建成功!✅");
     });
@@ -46,3 +59,4 @@ function build() {
 }
 
 export default build;
+
