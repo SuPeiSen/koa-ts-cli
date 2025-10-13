@@ -12,8 +12,9 @@ const IGNORE_FILES = ["env", ".vscode"];
  * 创建项目
  * @param {*} projectName 项目名
  * @param {*} options 配置项
+ * @param {*} templatePath 模板路径
  */
-async function createProject(projectName, options) {
+async function createProject(projectName, options, templatePath) {
   const answers = await inquirer.prompt([
     {
       type: "list",
@@ -60,6 +61,15 @@ async function createProject(projectName, options) {
       default: false,
       when: !options.docker,
     },
+    {
+      type: "list",
+      name: "sql",
+      // 数据库初始化
+      message: "database initialization",
+      default: "prisma",
+      choices: ["prisma", "typeorm"],
+      when: !options.sql,
+    },
   ]);
 
 
@@ -68,6 +78,7 @@ async function createProject(projectName, options) {
   }
 
   const spinner = ora("Downloading template...").start();
+  const projectPath = path.join(process.cwd(), projectName);
 
   try {
     const mergeOptions = {
@@ -77,7 +88,36 @@ async function createProject(projectName, options) {
     await downloadTemplate(projectName, mergeOptions);
     spinner.succeed("Project created successfully!");
 
-    const projectPath = path.join(process.cwd(), projectName);
+    const initSql = mergeOptions.sql;
+    switch (initSql) {
+      case "prisma":
+        // 在项目目录执行install prisma @prisma/client，根据选择的registry类型
+        console.log("Installing prisma...");
+        execSync(`${answers.npm_type} install prisma @prisma/client`, {
+          cwd: projectPath,
+        });
+        // 再执行prisma init
+        console.log("Initializing prisma...");
+        execSync("npx prisma init", {
+          cwd: projectPath,
+        });
+        break;
+      case "typeorm":
+        // 在项目目录执行install typeorm reflect-metadata
+        console.log("Installing typeorm...");
+        execSync(`${answers.npm_type} install typeorm reflect-metadata`, {
+          cwd: projectPath,
+        });
+
+        // 复制/template/data-source.txt到项目src目录, 并修改后缀名为ts
+        execSync(`cp ${templatePath}/data-source.txt ${projectPath}/src/data-source.ts`);
+        // 在项目src目录创建entity目录和model目录，
+        // 并复制/template/test.txt到项目src/entity目录
+        // 复制/template/base_model.txt到项目src/model目录
+        execSync(`mkdir ${projectPath}/src/entity ${projectPath}/src/model && cp ${templatePath}/test.txt ${projectPath}/src/entity/test.ts && cp ${templatePath}/base_model.txt ${projectPath}/src/model/base_model.ts`);
+        break;
+    }
+
     const gitignorePath = path.join(projectPath, ".gitignore");
     // 修改项目根目录下的.gitignore 增加忽略env文件和.vscode目录
     appendFileSync(

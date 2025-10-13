@@ -55,7 +55,7 @@ program
   .option("-t, --template <template>", "Specify project template")
   .option("-d, --docker", "Add docker file")
   .action((name, options) => {
-    createProject(name, options);
+    createProject(name, options, templatePath);
   });
 
 program
