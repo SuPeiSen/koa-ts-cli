@@ -66,8 +66,8 @@ async function createProject(projectName, options, templatePath) {
       name: "sql",
       // 数据库初始化
       message: "database initialization",
-      default: "prisma",
-      choices: ["prisma", "typeorm"],
+      default: "none",
+      choices: ["none", "prisma", "typeorm"],
       when: !options.sql,
     },
   ]);
