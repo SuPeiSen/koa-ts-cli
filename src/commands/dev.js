@@ -1,105 +1,157 @@
 import { spawn } from "child_process";
 import chokidar from "chokidar";
-import { existsSync } from "fs";
-import path from "path";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import path, { join } from "path";
 import chalk from "chalk";
+import dotenv from "dotenv";
 
-chalk.level = 3;
+chalk.level = 3; // 强制开启最高颜色等级
 
-// 当前执行的项目路径
-const projectPath = process.cwd();
-let childProcess;
+/** ========== 常量区域 ========== **/
+const projectPath = process.cwd(); // 项目根目录
+const SRC_DIR = path.join(projectPath, "src");
+const ENV_DIR = path.join(projectPath, "env");
+const TS_CONFIG_PATH = path.join(projectPath, "tsconfig.json");
+const MAIN_FILE = path.join(SRC_DIR, "index.ts");
+const ENV_DTS_FILE = path.join(SRC_DIR, "env.d.ts");
 
-// 启动 TypeScript 进程
+/** @type any */
+let childProcess; // 保存当前子进程实例
+
+/** 
+ * 启动 ts-node 子进程
+ * 使用 --files 选项确保可以加载 .d.ts 文件
+ */
 const startProcess = () => {
-  const mainFile = path.join(projectPath, "src", "index.ts");
-  const tsConfig = path.join(projectPath, "tsconfig.json");
-
-  // 使用 npx 执行 ts-node 来运行 TypeScript 文件
-
-  // tsc 总是 会根据 tsconfig 加载 include 中的所有文件（含 .d.ts）
-  // 但 ts-node 默认懒加载，只编译入口及其 import 的文件，不会自动读 include
-  // .d.ts 通常没有被任何文件 import，所以必须让 ts-node 主动加载，这就是 --files 选项的意义
   childProcess = spawn(
     "npx",
-    ["ts-node", "--files", "-r", "tsconfig-paths/register", mainFile, "-P", tsConfig],
+    ["ts-node", "--files", "-r", "tsconfig-paths/register", MAIN_FILE, "-P", TS_CONFIG_PATH],
     {
-      stdio: "inherit", // 继承父进程的标准输入输出
+      stdio: "inherit", // 继承父进程标准 IO
       env: {
-        ...process.env, // 继承父进程的环境变量
-        NODE_ENV: "development", // 设置环境变量为开发环境
-        FORCE_COLOR: "3", // 强制颜色输出
+        ...process.env,
+        NODE_ENV: "development", // 开发模式
+        FORCE_COLOR: "3", // 彩色输出
       },
     }
   );
 
-  // 错误处理
   childProcess.on("error", (error) => {
-    console.error(`Failed to start subprocess: ${error.message}`);
-  });
-
-  // 监听子进程退出事件
-  childProcess.on("exit", (code) => {
-    if (code !== 0) {
-      console.log(`Child process exited with code ${code}`);
-    }
+    console.error(chalk.red(`❌ 子进程启动失败: ${error.message}`));
   });
 };
 
-// 加载 chokidar 的配置文件
+/**
+ * 加载 chokidar 配置文件
+ * 支持自定义监控路径和参数
+ */
 const loadChokidarConfig = async () => {
   const configPath = path.join(projectPath, "chokidar.config.js");
 
-  // 检查配置文件是否存在
   if (existsSync(configPath)) {
-    // 动态导入配置文件并返回默认导出
-    const config = await import(configPath);
-
-    if (Object.keys(config.default.default).length > 0) {
-      console.log(chalk.green(`load chokidar config success:`), configPath);
+    try {
+      const configModule = await import(configPath);
+      const config = configModule.default?.default || {};
+      if (Object.keys(config).length > 0) {
+        console.log(chalk.green(`✅ 成功加载 Chokidar 配置文件: ${configPath}`));
+      }
+      return config;
+    } catch (err) {
+      console.error(chalk.red(`❌ 加载 Chokidar 配置失败: ${err.message}`));
     }
-
-    return config.default.default || {};
   }
 
-  // 如果不存在，返回默认空对象
+  // 返回默认配置
   return {};
 };
 
-// 开发服务的核心功能
+/**
+ * 生成 env 类型声明文件 (env.d.ts)
+ * @param {string} outputPath 输出路径
+ */
+const generateEnvDts = (outputPath) => {
+  const envKeys = new Set();
+
+  if (!existsSync(ENV_DIR)) {
+    console.warn(chalk.yellow("⚠️ env 目录不存在，跳过类型生成"));
+    return;
+  }
+
+  // 读取 env 目录下所有文件
+  const files = readdirSync(ENV_DIR);
+  files.forEach(fileName => {
+    const content = readFileSync(join(ENV_DIR, fileName), "utf8");
+    const parsed = dotenv.parse(content);
+    Object.keys(parsed).forEach(key => envKeys.add(key));
+  });
+
+  if (envKeys.size === 0) {
+    console.warn(chalk.yellow("⚠️ 未解析到任何 env key"));
+    return;
+  }
+
+  const typeLines = Array.from(envKeys)
+    .sort()
+    .map(key => `    ${key}: string;`)
+    .join("\n");
+
+  const dtsContent = `
+// 自动生成的 env 类型声明文件
+declare namespace NodeJS {
+  interface ProcessEnv {
+${typeLines}
+  }
+}
+`;
+
+  writeFileSync(outputPath, dtsContent, "utf8");
+  console.log(chalk.green(`✅ 已生成 ${outputPath}，字段数: ${envKeys.size}`));
+};
+
+/**
+ * 启动开发服务
+ * - 监听文件变化
+ * - 自动重启 ts-node 子进程
+ * - 生成 env 类型
+ */
 const devService = async () => {
-  // 加载 chokidar 配置
+  // 加载监听配置
   const chokidarConfig = await loadChokidarConfig();
-  const watchPath = chokidarConfig.watchPath || [path.join(projectPath, "src")];
-  // 输出监视的路径
-  watchPath.forEach((p, index) => {
-    console.log(`${chalk.green("Watching path in")}: ${p}`);
+
+  const watchPaths = chokidarConfig.watchPath || [SRC_DIR];
+  watchPaths.push(ENV_DIR); // 同时监听 env 文件夹变化
+
+  watchPaths.forEach(p => {
+    console.log(chalk.cyan(`👀 正在监听: ${p}`));
   });
 
-  // 创建文件监视器
-  const watcher = chokidar.watch(watchPath, {
-    ignored: [/(^|[\/\\])\../], // 忽略隐藏文件
-    persistent: true, // 持续监视
-    ignoreInitial: true, // 忽略初始文件扫描
-    awaitWriteFinish: true, // 等待写入完成
-    ...chokidarConfig, // 合并自定义配置
+  const watcher = chokidar.watch(watchPaths, {
+    persistent: true,
+    ignoreInitial: true,
+    awaitWriteFinish: true,
+    ...chokidarConfig, // 合并用户配置
   });
 
-  // 监听所有事件
-  watcher.on("all", (eventName, listener) => {
-    console.log(`${eventName} => ${listener}`);
+  watcher.on("all", (eventName, filePath) => {
+    console.log(chalk.magenta(`${eventName} => ${filePath}`));
 
-    // 如果子进程存在，先终止它
-    if (childProcess) {
-      console.log(chalk.red("\nrestart service ..."));
-      childProcess.kill();
+    // 如果 env 文件发生变化，重新生成类型声明
+    if (filePath.includes("env") && filePath.endsWith(".env")) {
+      generateEnvDts(ENV_DTS_FILE);
     }
 
-    // 重新启动子进程
+    // 自动重启服务
+    if (childProcess) {
+      console.log(chalk.yellow("\n♻️ 检测到变更，重启服务..."));
+      childProcess.kill();
+    }
     startProcess();
   });
 
-  // 启动初始的子进程
+  // 生成 env 类型
+  generateEnvDts(ENV_DTS_FILE)
+
+  // 启动初始服务
   startProcess();
 };
 
