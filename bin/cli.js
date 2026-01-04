@@ -43,8 +43,9 @@ program
 program
   .command("doc")
   .description("Generate api documentation")
-  .action(() => {
-    GenerateDoc();
+  .action(async () => {
+    await GenerateDoc();
+    process.exit(0);
   });
 
 program

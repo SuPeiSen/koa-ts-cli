@@ -72,6 +72,7 @@ export async function generateDocumentation() {
 
       // 格式化文档
       execSync(`npx prettier --write ${CONFIG.DOCUMENTATION_DIR}/**/*.ts`);
+      console.log("文档生成成功 ✅");
     } catch (error) {
       console.error("文档生成失败:", error);
       process.exit(1);

@@ -56,6 +56,10 @@ function build(options) {
       console.log("构建成功!✅");
     });
   });
+
+  tscProcess.on("error", (error) => {
+    console.error("❌构建失败:", error);
+  });
 }
 
 export default build;
