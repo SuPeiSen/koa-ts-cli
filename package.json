@@ -8,7 +8,8 @@
     "build": "rm -rf dist && tsc && mkdir -p dist/src && cp -r src/template dist/src/template",
     "watch": "tsc -w",
     "dev": "npx tsx bin/koa-ts-cli.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"bin/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"bin/**/*.ts\"",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
