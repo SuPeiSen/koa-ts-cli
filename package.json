@@ -1,6 +1,6 @@
 {
   "name": "koa-typescript-cli",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "bin": {
     "koa-ts-cli": "./dist/bin/koa-ts-cli.js"
   },
