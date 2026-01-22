@@ -6,8 +6,7 @@ import { Logger } from "../core/logger.js";
 
 const git = (simpleGit as any)();
 
-const TEMPLATE_REPO =
-  "http://openwrt.hellosu.top:3000/supeisen/koa-ts-template.git";
+const TEMPLATE_REPO = "https://github.com/SuPeiSen/koa-ts-template.git";
 const X_GWT_TEMPLATE_REPO =
   "https://xget.xi-xu.me/gh/SuPeiSen/koa-ts-template.git";
 
