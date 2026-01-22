@@ -1,6 +1,6 @@
 {
   "name": "koa-typescript-cli",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "bin": {
     "koa-ts-cli": "./dist/bin/koa-ts-cli.js"
   },
@@ -34,9 +34,7 @@
     "reflect-metadata": "^0.2.2",
     "simple-git": "^3.27.0",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.16",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@types/babel__core": "^7.20.5",

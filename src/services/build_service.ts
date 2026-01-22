@@ -25,13 +25,7 @@ export class BuildService {
     // 2. TSC
     Logger.info("Compiling TypeScript...");
     try {
-      await this.spawnPromise("npx", [
-        "-p",
-        "typescript",
-        "tsc",
-        "-p",
-        tsConfig,
-      ]);
+      await this.spawnPromise("npm", ["exec", "--", "tsc", "-p", tsConfig]);
     } catch (e) {
       Logger.error(`Compilation failed: ${e}`);
       return;
@@ -40,7 +34,13 @@ export class BuildService {
     // 3. TSC Alias
     Logger.info("Resolving aliases...");
     try {
-      await this.spawnPromise("npx", ["tsc-alias", "-p", tsConfig]);
+      await this.spawnPromise("npm", [
+        "exec",
+        "--",
+        "tsc-alias",
+        "-p",
+        tsConfig,
+      ]);
     } catch (e) {
       Logger.error(`Alias resolution failed: ${e}`);
       return;
