@@ -265,6 +265,11 @@ export class DocService {
             true // static
         );
 
+        const importDecl = t.importDeclaration(
+            [t.importSpecifier(t.identifier("ApiDoc"), t.identifier("ApiDoc"))],
+            t.stringLiteral("koa-ts-core")
+        );
+
         const methods = functionNames.map((methodName) => {
             const config = routeConfig.get(methodName);
             const method = config?.method || "get";
@@ -280,7 +285,7 @@ export class DocService {
             []
         );
 
-        const ast = t.program([t.exportDefaultDeclaration(classNode)]);
+        const ast = t.program([importDecl, t.exportDefaultDeclaration(classNode)]);
 
         return generator(ast, {
             retainLines: true,
@@ -318,6 +323,30 @@ export class DocService {
             },
         });
 
+        // Ensure Import
+        let hasImport = false;
+        traverse(ast, {
+            ImportDeclaration(path: any) {
+                if (path.node.source.value === "koa-ts-core") {
+                    hasImport = true;
+                    // Check if ApiDoc is imported
+                    const hasApiDoc = path.node.specifiers.some((s: any) => t.isImportSpecifier(s) && (s.imported.type === "Identifier" ? s.imported.name : s.imported.value) === "ApiDoc");
+                    if (!hasApiDoc) {
+                        path.node.specifiers.push(t.importSpecifier(t.identifier("ApiDoc"), t.identifier("ApiDoc")));
+                    }
+                }
+            }
+        });
+
+        if (!hasImport) {
+            const importDecl = t.importDeclaration(
+                [t.importSpecifier(t.identifier("ApiDoc"), t.identifier("ApiDoc"))],
+                t.stringLiteral("koa-ts-core")
+            );
+            // @ts-ignore
+            ast.program.body.unshift(importDecl);
+        }
+
         return generator(ast, {
             retainLines: true,
             comments: true,
@@ -337,14 +366,16 @@ export class DocService {
         path: %%PATH%%,
         request: {
           header: { 
-            'Content-Type': 'application/json'
+            'Content-Type': {
+              description: 'Content-Type',
+              required: true,
+              type: 'string'
+            }
           },
           body: {},
           query: {}
         },
-        response: { 
-          body: {} 
-        }
+        response: { body: {} }
       };
     `);
 
@@ -353,12 +384,18 @@ export class DocService {
             METHOD: t.stringLiteral(methodVal)
         });
 
-        return t.classMethod(
+        const methodNode = t.classMethod(
             "method",
             t.identifier(methodName),
             [],
             t.blockStatement([methodBody as any]) // Template returns Statement, block needs Statement[]
         );
+
+        methodNode.returnType = t.tsTypeAnnotation(
+            t.tsTypeReference(t.identifier("ApiDoc"))
+        );
+
+        return methodNode;
     }
 
     private static async formatCode(code: string) {
