@@ -133,8 +133,14 @@ koa-ts-cli dev
 构建生产环境代码。
 
 ```bash
-koa-ts-cli build
+```bash
+koa-ts-cli build [options]
 ```
+
+**可选参数：**
+- `-D, --doc`: 自动编译并将 `doc/` 目录打包到构建产物中 (需要先手动运行 `doc` 生成文档)。
+- `-c, --copy_env`: 自动复制 `env/` 目录到构建产物中。
+
 会自动执行 `tsc` 编译，并处理静态资源（如模板文件）的复制。
 
 ### `doc`

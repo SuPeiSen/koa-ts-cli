@@ -1,6 +1,8 @@
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
 import { Logger } from "../core/logger.js";
+import { DocService } from "./doc_service.js";
 
 export class BuildService {
   /**
@@ -10,8 +12,9 @@ export class BuildService {
    * 3. 解析路径别名 (tsc-alias)。
    * 4. 复制环境变量文件。
    * @param copyEnv - 是否将 .env 文件复制到构建目录。
+   * @param buildDoc - 是否构建文档。
    */
-  static async build(copyEnv: boolean) {
+  static async build(copyEnv: boolean, buildDoc: boolean = false) {
     const projectPath = process.cwd();
     const buildDir = path.join(projectPath, "build");
     const tsConfig = path.join(projectPath, "tsconfig.json");
@@ -56,6 +59,42 @@ export class BuildService {
       ]);
     } else {
       await this.spawnPromise("mkdir", ["-p", path.join(buildDir, "env")]);
+    }
+
+    // 5. Compile Doc (if enabled)
+    if (buildDoc) {
+      Logger.info("Compiling documentation...");
+      const tempTsConfigPath = path.join(projectPath, "tsconfig.doc.json");
+      const tempTsConfig = {
+        extends: "./tsconfig.json",
+        compilerOptions: {
+          rootDir: ".",
+          outDir: "./build",
+          noEmit: false,
+        },
+        include: ["doc/**/*"],
+      };
+
+      try {
+        fs.writeFileSync(
+          tempTsConfigPath,
+          JSON.stringify(tempTsConfig, null, 2),
+        );
+
+        await this.spawnPromise("npm", [
+          "exec",
+          "--",
+          "tsc",
+          "-p",
+          tempTsConfigPath,
+        ]);
+      } catch (e) {
+        Logger.error(`Documentation compilation failed: ${e}`);
+      } finally {
+        if (fs.existsSync(tempTsConfigPath)) {
+          fs.unlinkSync(tempTsConfigPath);
+        }
+      }
     }
 
     Logger.success("Build completed successfully! ✅");

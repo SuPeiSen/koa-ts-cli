@@ -73,6 +73,7 @@ program
     .command("build")
     .description("Build project")
     .option("-c, --copy_env", "Copy .env to build")
+    .option("-D, --doc", "Generate and bundle documentation")
     .action((options) => {
         BuildCommand.execute(options);
     });
