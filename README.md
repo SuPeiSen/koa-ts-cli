@@ -7,16 +7,17 @@
 ## 核心特性
 
 - **🛠 开箱即用**: 一键创建基于 TypeScript 的 Koa 项目，内置最佳实践目录结构。
-- **⚡️ 极速开发**: 内置 `ts-node` 开发服务器，支持文件变更热重载。
-- **📝 文档生成**: 自动扫描 `@Router` 装饰器，一键生成符合 `koa2-swagger-ui` 标准的接口文档。
+- **⚡️ 极速开发**: 内置 `ts-node` 开发服务器，支持文件变更热重载，监听路径更全面。
+- **📝 文档生成**: 自动扫描并生成符合 **OpenAPI 3.0** 标准的文档配置，支持 Bearer JWT 等高级安全配置。
+- **🚀 ESM 友好**: 内置 `jiti` 加载器，完美支持 ESM 与 CommonJS 项目，告别模块加载错误。
 - **🧩 深度集成**: 与 [`koa-ts-core`](https://www.npmjs.com/package/koa-ts-core) 无缝配合，提供强大的路由、鉴权、校验能力。
 - **🏗 代码生成**: 一键生成 Controller (控制器) 和 Validator (校验器) 模板代码。
-
----
+ 
+ ---
 
 ## 依赖要求
 
-- Node.js >= 16.0.0
+- Node.js >= 18.0.0
 - npm / yarn / pnpm
 
 ## 安装
@@ -72,7 +73,7 @@ koa-ts-cli dev
 
 该命令会自动：
 - 启动 TypeScript 编译与运行环境。
-- 监听 `src` 目录源码变更，自动重启服务。
+- 智能监听 `src`、`env` 等核心目录及配置文件的变更，自动重启服务。
 - 加载 `env/.development.env` 环境变量。
 
 ### 3. 生成代码模板
@@ -155,8 +156,8 @@ koa-ts-cli doc
 ## 常见问题
 
 **Q: 为什么运行 `koa-ts-cli doc` 报错 "Cannot read properties of undefined"?**
-
-A: 通常是因为项目中的 Controller 依赖装饰器，但执行环境未启用 `experimentalDecorators`。最新版的 `koa-ts-cli` 已内置修复了此问题，请确保更新到最新版本。
+ 
+ A: 这通常是旧版 CLI 对 ESM 支持不佳导致的。最新版 `koa-ts-cli` 已内置 `jiti` 加载器，能够完美兼容 ESM 和 CommonJS 模块，请更新到最新版本即可解决。
 
 **Q: 生成的文档在哪里查看？**
 

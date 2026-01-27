@@ -121,7 +121,7 @@ export class DocService {
 
         if (functionsToAdd.length > 0 || functionsToRemove.length > 0) {
             Logger.info(`Updating ${docPath}: +${functionsToAdd.length}, -${functionsToRemove.length}`);
-            await this.updateDocumentationFile(docPath, functionsToAdd, functionsToRemove);
+            await this.updateDocumentationFile(docPath, functionsToAdd, functionsToRemove, controllerMeta);
         }
     }
 
@@ -151,13 +151,15 @@ export class DocService {
     private static async updateDocumentationFile(
         filePath: string,
         functionsToAdd: string[],
-        functionsToRemove: string[]
+        functionsToRemove: string[],
+        controllerMeta: ClassMetadata
     ) {
         const originalCode = await fs.readFile(filePath, "utf8");
         const modifiedCode = this.modifyClassMethods(
             originalCode,
             functionsToAdd,
-            functionsToRemove
+            functionsToRemove,
+            controllerMeta
         );
         const formattedCode = await this.formatCode(modifiedCode);
         await fs.writeFile(filePath, formattedCode);
@@ -199,8 +201,8 @@ export class DocService {
                 }
             }
 
-            if (!routeConfigMap) {
-                Logger.warn(`No route metadata found for ${filePath}. Ensure it uses @Router or @AuthRouter decorators.`);
+            if (!routeConfigMap || routeConfigMap.size === 0) {
+                // If it's not a router controller, just ignore it.
                 return undefined;
             }
 
@@ -258,8 +260,9 @@ export class DocService {
             const config = routeConfig.get(methodName);
             const method = config?.method || "get";
             const pathStr = config?.path || `/${methodName}`;
+            const authRequired = config?.authRequired || false;
 
-            return this.createMethodNode(methodName, pathStr, method);
+            return this.createMethodNode(methodName, pathStr, method, authRequired);
         });
 
         const classNode = t.classDeclaration(
@@ -282,7 +285,8 @@ export class DocService {
     private static modifyClassMethods(
         code: string,
         functionsToAdd: string[],
-        functionsToRemove: string[]
+        functionsToRemove: string[],
+        controllerMeta: ClassMetadata
     ): string {
         const ast = parse(code, {
             sourceType: "module",
@@ -301,7 +305,12 @@ export class DocService {
 
                 // Add new methods
                 functionsToAdd.forEach((methodName) => {
-                    const methodNode = DocService.createMethodNode(methodName, `/${methodName}`, "get");
+                    const config = controllerMeta.routeConfig.get(methodName);
+                    const method = config?.method || "get";
+                    const pathStr = config?.path || `/${methodName}`;
+                    const authRequired = config?.authRequired || false;
+
+                    const methodNode = DocService.createMethodNode(methodName, pathStr, method, authRequired);
                     path.node.body.body.unshift(methodNode);
                 });
             },
@@ -341,8 +350,10 @@ export class DocService {
     private static createMethodNode(
         methodName: string,
         pathVal: string,
-        methodVal: string
+        methodVal: string,
+        authRequired: boolean = false
     ) {
+        const securityProp = authRequired ? "security: []," : "";
         const templateFn = template.statement(`
       return {
         method: %%METHOD%%,
@@ -351,7 +362,8 @@ export class DocService {
         tags: [],
         parameters: [],
         requestBody: { content: {} },
-        responses: {}
+        responses: {},
+        ${securityProp}
       };
     `);
 

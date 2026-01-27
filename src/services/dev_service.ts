@@ -32,8 +32,8 @@ export class DevService {
         const chokidarConfig = await this.loadChokidarConfig();
 
         // 2. Setup Watch Paths
-        const watchPaths = chokidarConfig.watchPath || [SRC_DIR];
-        watchPaths.push(ENV_DIR);
+        const watchPaths = chokidarConfig.watchPath || [];
+        watchPaths.push(...[SRC_DIR, ENV_DIR]);
 
         watchPaths.forEach((p) => {
             Logger.info(`Watching: ${p}`);
