@@ -7,7 +7,7 @@ import _generator from "@babel/generator";
 import _template from "@babel/template";
 import _types from "@babel/types";
 import prettier from "prettier";
-import { createRequire } from "module";
+import { createJiti } from "jiti";
 import { Logger } from "../core/logger.js";
 import "reflect-metadata";
 
@@ -46,7 +46,7 @@ export class DocService {
 
     /**
      * 生成 API 文档的主要入口。
-     * 1. 注册 ts-node 以解析 TypeScript 文件。
+     * 1. 注册 jiti 以解析 TypeScript 文件。
      * 2. 扫描所有控制器文件。
      * 3. 处理每个控制器以提取路由信息。
      * 4. 格式化生成的文档。
@@ -54,17 +54,9 @@ export class DocService {
     static async generate() {
         Logger.startSpinner("Initializing documentation generator...");
 
-        // Dynaimc import ts-node to register compiler
-        const tsNode = await import("ts-node");
-        tsNode.register({
-            transpileOnly: true,
-            skipProject: true,
-            compilerOptions: {
-                module: "commonjs",
-                experimentalDecorators: true,
-                emitDecoratorMetadata: true,
-                esModuleInterop: true,
-            }
+        // Initialize jiti for loading TS files
+        const jiti = createJiti(import.meta.url, {
+            // interopDefault: true // Optional, jiti handles default exports well
         });
 
         try {
@@ -88,15 +80,10 @@ export class DocService {
             }
 
             for (const controllerFile of controllerFiles) {
-                await this.processControllerFile(controllerFile);
+                await this.processControllerFile(controllerFile, jiti);
             }
 
             Logger.info("Formatting documentation...");
-            // Using npx prettier via shell is safer than internal API sometimes, but let's emulate legacy behavior
-            // execSync(`npx prettier --write ${this.CONFIG.DOCUMENTATION_DIR}/**/*.ts`);
-            // We can use the prettier API instead if we want, but recursion might be tricky.
-            // Let's rely on the original logic of ensuring file + formatCode for individual files.
-            // But a global format is good.
             const { execSync } = await import("child_process");
             try {
                 execSync(`npx prettier --write ${this.CONFIG.DOCUMENTATION_DIR}/**/*.ts`, { stdio: 'ignore' });
@@ -114,17 +101,18 @@ export class DocService {
     /**
      * 处理单个控制器文件以生成或更新其文档。
      * @param controllerPath - 控制器文件的绝对路径。
+     * @param jiti - jiti instance
      */
-    private static async processControllerFile(controllerPath: string) {
+    private static async processControllerFile(controllerPath: string, jiti: any) {
         const relativePath = path.relative(this.CONFIG.CONTROLLER_DIR, controllerPath);
         const docPath = path.join(this.CONFIG.DOCUMENTATION_DIR, relativePath);
 
-        const controllerMeta = await this.extractControllerMetadata(controllerPath);
+        const controllerMeta = await this.extractControllerMetadata(controllerPath, jiti);
         if (!controllerMeta) return;
 
         await this.ensureDocumentationFile(docPath, controllerMeta);
 
-        const docMeta = await this.extractDocumentationMetadata(docPath);
+        const docMeta = await this.extractDocumentationMetadata(docPath, jiti);
 
         const { functionsToAdd, functionsToRemove } = this.compareMethods(
             controllerMeta.functionNames,
@@ -187,12 +175,10 @@ export class DocService {
      * @param filePath - 控制器路径。
      * @returns 元数据，如果无效则返回 undefined。
      */
-    private static async extractControllerMetadata(filePath: string): Promise<ClassMetadata | undefined> {
+    private static async extractControllerMetadata(filePath: string, jiti: any): Promise<ClassMetadata | undefined> {
         try {
-            const require = createRequire(import.meta.url);
-            // Delete cache to ensure fresh load
-            delete require.cache[require.resolve(filePath)];
-            const moduleData = require(filePath);
+            // Use jiti to load file
+            const moduleData = await jiti.import(filePath);
             const mainClass = moduleData.default;
 
             if (typeof mainClass !== "function" || !mainClass.prototype) {
@@ -231,10 +217,8 @@ export class DocService {
         }
     }
 
-    private static async extractDocumentationMetadata(filePath: string): Promise<DocumentationMetadata> {
-        const require = createRequire(import.meta.url);
-        delete require.cache[require.resolve(filePath)];
-        const moduleData = require(filePath);
+    private static async extractDocumentationMetadata(filePath: string, jiti: any): Promise<DocumentationMetadata> {
+        const moduleData = await jiti.import(filePath);
         const mainClass = moduleData.default;
 
         if (typeof mainClass !== "function" || !mainClass.prototype) {
@@ -362,20 +346,12 @@ export class DocService {
         const templateFn = template.statement(`
       return {
         method: %%METHOD%%,
-        description: '',
         path: %%PATH%%,
-        request: {
-          header: { 
-            'Content-Type': {
-              description: 'Content-Type',
-              required: true,
-              type: 'string'
-            }
-          },
-          body: {},
-          query: {}
-        },
-        response: { body: {} }
+        summary: '',
+        tags: [],
+        parameters: [],
+        requestBody: { content: {} },
+        responses: {}
       };
     `);
 
