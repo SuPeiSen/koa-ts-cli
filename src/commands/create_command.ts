@@ -12,7 +12,7 @@ export interface CreateOptions {
   template?: string; // Not heavily used in original logic but passed
   docker?: boolean;
   x_get?: boolean;
-  sql?: "none" | "prisma" | "typeorm";
+  sql?: "none" | "prisma";
 }
 
 export class CreateCommand {
@@ -76,7 +76,7 @@ export class CreateCommand {
         name: "sql",
         message: "database initialization",
         default: "none",
-        choices: ["none", "prisma", "typeorm"],
+        choices: ["none", "prisma"],
         when: !options.sql,
       },
     ]);

@@ -7,7 +7,7 @@ import { IGNORE_FILES } from "../constants/index.js";
 export interface ProjectSetupOptions {
   projectName: string;
   npm_type: string;
-  sql: "none" | "prisma" | "typeorm";
+  sql: "none" | "prisma";
   docker: boolean;
   templatePath: string;
 }
@@ -23,8 +23,6 @@ export class ProjectService {
     // Database Setup
     if (sql === "prisma") {
       this.setupPrisma(projectPath, npm_type);
-    } else if (sql === "typeorm") {
-      this.setupTypeORM(projectPath, npm_type, templatePath);
     }
 
     // Gitignore
@@ -44,7 +42,7 @@ export class ProjectService {
   private static setupPrisma(projectPath: string, npmType: string) {
     Logger.info(
       "Prisma v7 requires Node.js v20.19+.\n" +
-        "See: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres",
+      "See: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres",
     );
 
     const nodeVersion = process.versions.node; // e.g. "20.19.1"
@@ -66,36 +64,6 @@ export class ProjectService {
 
     Logger.info("Initializing prisma...");
     execSync("npx prisma init", { cwd: projectPath, stdio: "ignore" });
-  }
-
-  private static setupTypeORM(
-    projectPath: string,
-    npmType: string,
-    templatePath: string,
-  ) {
-    Logger.info("Installing typeorm...");
-    execSync(`${npmType} install typeorm reflect-metadata`, {
-      cwd: projectPath,
-      stdio: "ignore",
-    });
-
-    // Copy template files
-    try {
-      execSync(
-        `cp ${path.join(templatePath, "data-source.txt")} ${path.join(projectPath, "src/data-source.ts")}`,
-      );
-      execSync(
-        `mkdir -p ${path.join(projectPath, "src/entity")} ${path.join(projectPath, "src/model")}`,
-      );
-      execSync(
-        `cp ${path.join(templatePath, "test.txt")} ${path.join(projectPath, "src/entity/test.ts")}`,
-      );
-      execSync(
-        `cp ${path.join(templatePath, "base_model.txt")} ${path.join(projectPath, "src/model/base_model.ts")}`,
-      );
-    } catch (e) {
-      Logger.error(`Failed to copy TypeORM templates: ${e}`);
-    }
   }
 
   private static updateGitignore(projectPath: string) {
