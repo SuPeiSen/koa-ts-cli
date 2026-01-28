@@ -1,6 +1,6 @@
 {
   "name": "koa-typescript-cli",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "bin": {
     "koa-ts-cli": "./dist/bin/koa-ts-cli.js"
   },
@@ -11,50 +11,35 @@
     "format": "prettier --write \"src/**/*.ts\" \"bin/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/SuPeiSen/koa-ts-cli"
-  },
-  "dependencies": {
-    "@babel/generator": "^7.27.0",
-    "@babel/parser": "^7.27.0",
-    "@babel/template": "^7.27.0",
-    "@babel/traverse": "^7.27.0",
-    "@babel/types": "^7.27.0",
-    "chalk": "^4.1.2",
-    "chokidar": "^4.0.3",
-    "commander": "^9.4.1",
-    "cross-env": "^7.0.3",
-    "dotenv": "^17.2.3",
-    "glob": "^11.0.1",
-    "inquirer": "^8.2.5",
-    "jiti": "^2.6.1",
-    "nodemon": "^3.1.9",
-    "ora": "^6.1.2",
-    "prettier": "^3.5.3",
-    "reflect-metadata": "^0.2.2",
-    "simple-git": "^3.27.0",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
-  },
-  "devDependencies": {
-    "@types/babel__core": "^7.20.5",
-    "@types/babel__generator": "^7.27.0",
-    "@types/babel__template": "^7.4.4",
-    "@types/babel__traverse": "^7.28.0",
-    "@types/inquirer": "^9.0.9",
-    "@types/node": "^22.10.7",
-    "@types/prettier": "^2.7.3"
-  },
-  "type": "module",
-  "author": "supeisen",
-  "email": "570779284@qq.com",
-  "license": "ISC",
-  "description": "create koa typescript project",
+  "description": "A powerful CLI tool for scaffolding and managing enterprise-grade Koa + TypeScript applications.",
   "keywords": [
     "koa",
+    "koa3",
     "typescript",
-    "cli"
+    "cli",
+    "scaffold",
+    "framework",
+    "generator",
+    "swagger",
+    "openapi"
   ],
+  "homepage": "https://github.com/SuPeiSen/koa-ts-cli#readme",
+  "bugs": {
+    "url": "https://github.com/SuPeiSen/koa-ts-cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SuPeiSen/koa-ts-cli.git"
+  },
+  "license": "MIT",
+  "author": "SuPeiSen",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "packageManager": "pnpm@10.13.1+sha512.37ebf1a5c7a30d5fabe0c5df44ee8da4c965ca0c5af3dbab28c3a1681b70a256218d05c81c9c0dcf767ef6b8551eb5b960042b9ed4300c59242336377e01cfad"
 }
