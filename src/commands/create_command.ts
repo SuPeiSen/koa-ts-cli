@@ -99,7 +99,6 @@ export class CreateCommand {
         npm_type: finalOptions.npm_type!,
         sql: finalOptions.sql!,
         docker: finalOptions.docker!,
-        templatePath,
       });
 
       Logger.success(`\nProject created! Run:\n\n cd ${projectName}\n`);

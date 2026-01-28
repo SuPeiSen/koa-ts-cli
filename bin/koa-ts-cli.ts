@@ -8,6 +8,7 @@ import { AddCommand } from "../src/commands/add_command.js";
 import { DevCommand } from "../src/commands/dev_command.js";
 import { BuildCommand } from "../src/commands/build_command.js";
 import { DocCommand } from "../src/commands/doc_command.js";
+import { PrismaCommand } from "../src/commands/prisma_command.js";
 import { Logger } from "../src/core/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -76,6 +77,13 @@ program
     .option("-D, --doc", "Generate and bundle documentation")
     .action((options) => {
         BuildCommand.execute(options);
+    });
+
+program
+    .command("prisma")
+    .description("Run prisma db pull && prisma generate")
+    .action(() => {
+        PrismaCommand.execute();
     });
 
 program.parse(process.argv);

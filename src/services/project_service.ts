@@ -9,7 +9,6 @@ export interface ProjectSetupOptions {
   npm_type: string;
   sql: "none" | "prisma";
   docker: boolean;
-  templatePath: string;
 }
 
 export class ProjectService {
@@ -18,7 +17,7 @@ export class ProjectService {
    * 包括数据库初始化、Gitignore 更新、Docker 配置等
    */
   static setupProject(projectPath: string, options: ProjectSetupOptions) {
-    const { npm_type, sql, docker, projectName, templatePath } = options;
+    const { npm_type, sql, docker, projectName } = options;
 
     // Database Setup
     if (sql === "prisma") {
@@ -39,7 +38,30 @@ export class ProjectService {
     }
   }
 
+  /**
+   * 初始化 Prisma
+   * 1. 检查 Node 版本
+   * 2. 安装依赖
+   * 3. 初始化配置
+   */
   private static setupPrisma(projectPath: string, npmType: string) {
+    this.checkPrismaNodeVersion();
+
+    Logger.info("Installing prisma...");
+    execSync(`${npmType} install @prisma/client @prisma/adapter-pg`, {
+      cwd: projectPath,
+      stdio: "ignore",
+    });
+
+    Logger.info("Initializing prisma...");
+    execSync("npx prisma init", { cwd: projectPath, stdio: "ignore" });
+  }
+
+  /**
+   * 检查 Prisma 运行所需的 Node 版本
+   * Prisma v7 需要 Node.js v20.19+
+   */
+  private static checkPrismaNodeVersion() {
     Logger.info(
       "Prisma v7 requires Node.js v20.19+.\n" +
       "See: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres",
@@ -55,17 +77,12 @@ export class ProjectService {
       );
       process.exit(1);
     }
-
-    Logger.info("Installing prisma...");
-    execSync(`${npmType} install prisma @prisma/client`, {
-      cwd: projectPath,
-      stdio: "ignore",
-    });
-
-    Logger.info("Initializing prisma...");
-    execSync("npx prisma init", { cwd: projectPath, stdio: "ignore" });
   }
 
+  /**
+   * 更新 .gitignore 文件
+   * 追加一些默认要忽略的文件
+   */
   private static updateGitignore(projectPath: string) {
     const gitignorePath = path.join(projectPath, ".gitignore");
     try {
@@ -78,6 +95,11 @@ export class ProjectService {
     }
   }
 
+  /**
+   * 配置 Docker
+   * @param useDocker 是否使用 Docker
+   * @param projectName 项目名称
+   */
   private static setupDocker(
     projectPath: string,
     useDocker: boolean,
@@ -85,6 +107,7 @@ export class ProjectService {
   ) {
     if (!useDocker) {
       // Remove docker files if not needed
+      // 移除不需要的 docker 相关文件
       execSync(
         "rm -rf Dockerfile docker-compose.yml .dockerignore src/ecosystem.config.ts",
         {
@@ -93,6 +116,7 @@ export class ProjectService {
       );
     } else {
       // Update Dockerfile template
+      // 更新 docker-compose.yml 中的容器名占位符
       const dockerComposePath = path.join(projectPath, "docker-compose.yml");
       try {
         const content = readFileSync(dockerComposePath, "utf-8");
