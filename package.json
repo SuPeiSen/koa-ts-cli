@@ -11,6 +11,38 @@
     "format": "prettier --write \"src/**/*.ts\" \"bin/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },
+  "dependencies": {
+    "@babel/generator": "^7.27.0",
+    "@babel/parser": "^7.27.0",
+    "@babel/template": "^7.27.0",
+    "@babel/traverse": "^7.27.0",
+    "@babel/types": "^7.27.0",
+    "chalk": "^4.1.2",
+    "chokidar": "^4.0.3",
+    "commander": "^9.4.1",
+    "cross-env": "^7.0.3",
+    "dotenv": "^17.2.3",
+    "glob": "^11.0.1",
+    "inquirer": "^8.2.5",
+    "jiti": "^2.6.1",
+    "nodemon": "^3.1.9",
+    "ora": "^6.1.2",
+    "prettier": "^3.5.3",
+    "reflect-metadata": "^0.2.2",
+    "simple-git": "^3.27.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/inquirer": "^9.0.9",
+    "@types/node": "^22.10.7",
+    "@types/prettier": "^2.7.3"
+  },
+  "type": "module",
   "description": "A powerful CLI tool for scaffolding and managing enterprise-grade Koa + TypeScript applications.",
   "keywords": [
     "koa",
